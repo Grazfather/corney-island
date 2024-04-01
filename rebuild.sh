@@ -25,38 +25,45 @@ fi
 
 for board in ${boards}
 do
-    echo "\n\n>>>>>> Processing $board <<<<<<\n\n"
+    echo "\n\n>>>>>> Processing ${board} <<<<<<\n\n"
+    input_pcb=ergogen/output/pcbs/${board}.kicad_pcb
+    output_pcb=ergogen/output/pcbs/${board}_autorouted.kicad_pcb
+    dsn=ergogen/output/pcbs/${board}.dsn
+    ses=ergogen/output/pcbs/${board}.ses
 
     # Cleanup the outputs
-    rm -f ergogen/output/pcbs/${board}.dsn  
-    rm -f ergogen/output/pcbs/${board}.ses  
-    rm -f ergogen/output/pcbs/${board}.pro  
-    rm -f ergogen/output/pcbs/${board}_autorouted.kicad_pcb  
- 
-    if [ -e ergogen/output/pcbs/${board}.kicad_pcb ]; then
-        echo Export DSN 
-        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot/export_dsn.py -b ergogen/output/pcbs/${board}.kicad_pcb -o ergogen/output/pcbs/${board}.dsn    
-        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot -b ergogen/output/pcbs/${board}.kicad_pcb -c kibot/default.kibot.yaml
+    rm -f ${dsn}
+    rm -f ${ses}
+    rm -f ergogen/output/pcbs/${board}.pro
+    rm -f ${output_pcb}
+
+    if [ -e ${input_pcb} ]; then
+        echo "Export DSN"
+        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot/export_dsn.py -b ${input_pcb} -o ${dsn}
+        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot -b ${input_pcb} -c kibot/default.kibot.yaml
     fi
-    if [ -e ergogen/output/pcbs/${board}.dsn ]; then
-        echo Autoroute PCB
-        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-cli.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20
-        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.6.5.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20
-        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.7.0.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.8.0.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20 -dct 1
-        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.9.0.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20 -dct 1
-        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-test.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20 -dct 1
-        ${container_cmd} run ${container_args} ${freerouting_cli_image} java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar /opt/freerouting_cli.jar -de ergogen/output/pcbs/${board}.dsn -do ergogen/output/pcbs/${board}.ses -dr freerouting/freerouting.rules -mp 20
+    if [ -e ${dsn} ]; then
+        echo "Autoroute PCB"
+        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-cli.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20
+        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.6.5.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20
+        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.7.0.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20
+	# xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.8.0.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20 -dct 1
+        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.9.0.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20 -dct 1
+        java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-1.9.0.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20 -dct 1
+        # xvfb-run -a java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar freerouting/freerouting-test.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20 -dct 1
+        # java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar ./freerouting-test.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20
+        # ${container_cmd} run ${container_args} ${freerouting_cli_image} java -Dlog4j.configurationFile=file:./freerouting/log4j2.xml -jar /opt/freerouting_cli.jar -de ${dsn} -do ${ses} -dr freerouting/freerouting.rules -mp 20
         # ${container_cmd} run ${container_args} nixos/nix nix-shell --argstr board ${board}
     fi
-    if [ -e ergogen/output/pcbs/${board}.ses ]; then
+    if [ -e ${ses} ]; then
         echo "Import SES"
-        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot/import_ses.py -b ergogen/output/pcbs/${board}.kicad_pcb -s ergogen/output/pcbs/${board}.ses -o ergogen/output/pcbs/${board}_autorouted.kicad_pcb
+        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot/import_ses.py -b ${input_pcb} -s ${ses} -o ${output_pcb}
     fi
-    if [ -e ergogen/output/pcbs/${board}_autorouted.kicad_pcb ]; then
-        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot -b ergogen/output/pcbs/${board}_autorouted.kicad_pcb -c kibot/boards.kibot.yaml
+    if [ -e ${output_pcb} ]; then
+        ${container_cmd} run ${container_args} ${kicad_auto_image} kibot -b ${output_pcb} -c kibot/boards.kibot.yaml
     fi
 done
 
-# Docker runs as root and causes issues with file ownership
-sudo chown $USER -R ergogen
-sudo chown $USER -R freerouting
+# Docker runs as root and can cause issues with file ownership
+sudo chown -R $USER ergogen
+sudo chown -R $USER freerouting
